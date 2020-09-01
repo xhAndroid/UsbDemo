@@ -16,4 +16,10 @@ public class MainActivity extends AppCompatActivity {
 
         UsbHostManager.getInstance().init(this);
     }
+
+    @Override
+    protected void onDestroy() {
+        UsbHostManager.getInstance().releaseUsb(this);
+        super.onDestroy();
+    }
 }

@@ -56,6 +56,21 @@ public class UsbHostManager {
         mThreadPoolExecutor = new ScheduledThreadPoolExecutor(6);
     }
 
+    public void releaseUsb(Context context) {
+        if (isUsbConnect) {
+            isUsbConnect = false;
+            mThreadPoolExecutor.shutdown();
+            if (null != mInterfaceArray && mDeviceConnection != null) {
+                for (UsbInterface usbInterface : mInterfaceArray) {
+                    mDeviceConnection.releaseInterface(usbInterface);
+                    usbInterface = null;
+                }
+                mDeviceConnection.close();
+            }
+        }
+        unregisterUsbReceivers(context);
+    }
+
     private int interfaceCount = 0;
     private UsbInterface[] mInterfaceArray;
     private UsbDeviceConnection mDeviceConnection;
@@ -119,8 +134,8 @@ public class UsbHostManager {
         if (is_have_permission) {
             connectUsbAndFindEndPoint(usbManager, usbDevice);
         } else {
-            requestPermission(context, usbManager, usbDevice);
-            registerReceiver(context);
+            requestUsbPermission(context, usbManager, usbDevice);
+            registerUsbReceiver(context);
         }
     }
 
@@ -213,17 +228,19 @@ public class UsbHostManager {
                                         // 飞控数据
                                         break;
                                     case UsbHostConfig.MSG_ID_GS_INFO:
-                                        // 信号强度等信息
-                                        break;
-                                    case UsbHostConfig.MSG_ID_ENABLE_FREQUENCY:
-                                        // 使能对频
+                                        // 地面端信号质量（该值必须是模块已连接成功才有效，取值范围 0-100，值越大，信号越好）
+                                        int gs_rssi = data_bytes[3];
+                                        // 天空端信号质量（该值必须是模块已连接成功才有效，取值范围 0-100，值越大，信号越好）
+                                        int air_rssi = data_bytes[4];
+                                        Log.i(TAG, "transfer, gs_rssi : " + gs_rssi + ", air_rssi : " + air_rssi);
                                         break;
                                     case UsbHostConfig.MSG_ID_DEVICE_INFO:
-                                        // 图传频段信息
+                                        // 图传频段信息， 0x01 表示设备频段为 2.4G， 0x02 表示设备频段为 5.8G
+                                        int band = data_bytes[1];
+                                        Log.i(TAG, "transfer, band : " + band);
                                         break;
-                                    case UsbHostConfig.MSG_ID_FREQUENCY_BAND:
-                                        // 图传频段选择
-                                        break;
+                                    default:
+                                        Log.w(TAG, "transfer, switch.default : " + msgId);
                                 }
                             }
                         }
@@ -263,6 +280,15 @@ public class UsbHostManager {
         }, 500, 300, TimeUnit.MILLISECONDS);
     }
 
+    public void enableMatchId() {
+        if (isUsbConnect) {
+            byte[] payload = new byte[1];
+            payload[0] = 0x01;
+            byte[] pack_bytes = UsbHostConfig.packMsgIdBytes(UsbHostConfig.MSG_ID_ENABLE_FREQUENCY, payload);
+            mDeviceConnection.bulkTransfer(endpointOutSendData, pack_bytes, pack_bytes.length, POINT_TIMEOUT);
+        }
+    }
+
     private void startCaptureVideoOneStream() {
         mThreadPoolExecutor.execute(new Runnable() {
             @Override
@@ -293,17 +319,34 @@ public class UsbHostManager {
         });
     }
 
-    private void requestPermission(Context context, UsbManager usbManager, UsbDevice usbDevice) {
+    private void requestUsbPermission(Context context, UsbManager usbManager, UsbDevice usbDevice) {
         PendingIntent permissionIntent = PendingIntent.getBroadcast(context, 0, new Intent(ACTION_USB_PERMISSION), 0);
         usbManager.requestPermission(usbDevice, permissionIntent);
         Log.i(TAG, "usb没有权限，开始申请权限");
     }
 
-    private void registerReceiver(Context context) {
+    private boolean isRegister = false;
+
+    private void registerUsbReceiver(Context context) {
+        if (isRegister) {
+            return;
+        }
         IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
         filter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
         filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
         context.registerReceiver(usbReceiver, filter);
+        isRegister = true;
+    }
+
+    private void unregisterUsbReceivers(Context context) {
+        try {
+            if (isRegister) {
+                context.unregisterReceiver(usbReceiver);
+            }
+            isRegister = false;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private static final String ACTION_USB_PERMISSION = "com.android.example.USB_PERMISSION";

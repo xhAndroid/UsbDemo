@@ -36,23 +36,23 @@ class UsbHostConfig {
     /**
      * 2.1 频段选择
      */
-    public static final byte MSG_ID_FREQUENCY_BAND = (byte) 0x22;
+    public static final int MSG_ID_FREQUENCY_BAND = 0x22;
     /**
      * 2.20 图传设备信息
      */
-    public static final byte MSG_ID_DEVICE_INFO = (byte) 0x19;
+    public static final int MSG_ID_DEVICE_INFO = 0x19;
     /**
      * 2.21 模组地面端状态信息
      */
-    public static final byte MSG_ID_GS_INFO = (byte) 0x82;
+    public static final int MSG_ID_GS_INFO = 0x82;
     /**
      * 2.24 USB 透传读取数据
      */
-    public static final byte MSG_ID_TRANSFER_DATA = (byte) 0x85;
+    public static final int MSG_ID_TRANSFER_DATA = 0x85;
     /**
      * 2.6 使能对频
      */
-    public static final byte MSG_ID_ENABLE_FREQUENCY = (byte) 0x5B;
+    public static final int MSG_ID_ENABLE_FREQUENCY = 0x5B;
 
     public static byte[] packMsgIdBytes(int msgId, byte[] payload) {
         int data_length = (payload == null) ? 0 : payload.length;
