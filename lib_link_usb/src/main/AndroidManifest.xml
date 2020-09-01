@@ -12,5 +12,21 @@
     <!-- https://developer.android.com/guide/topics/connectivity/usb/accessory?hl=zh-cn -->
 
 
+    <!--<application
+        ... >
+        在Activity中注册获取USB
+        <activity android:name=".ui.MainActivity">
+            <intent-filter>
+                发现USB设备
+                <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
+                终止USB设备的通信
+                <action android:name="android.hardware.usb.action.USB_DEVICE_DETACHED" />
+            </intent-filter>
+             USB_DEVICE_ATTACHED 发现设备
+            <meta-data
+                android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
+                android:resource="@xml/device_filter" />
+        </activity>
+    </application>-->
 
 </manifest>
