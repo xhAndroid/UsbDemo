@@ -15,6 +15,7 @@ import android.util.Log;
 
 import java.util.HashMap;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * -----------------------------------------------------------------
@@ -59,7 +60,7 @@ public class UsbHostManager {
     private UsbInterface[] mInterfaceArray;
     private UsbDeviceConnection mDeviceConnection;
     /**
-     *
+     * 给图传发送心跳包数据
      */
     private UsbEndpoint endpointOutSendData;
     /**
@@ -76,24 +77,39 @@ public class UsbHostManager {
      */
     private UsbEndpoint endpointInVideoTwoData;
 
+    /**
+     * 飞控数据buffer
+     */
+    private byte[] uavBuffer = new byte[512];
+
+    private static final int VIDEO_BUFFER_LENGTH = 10 * 1024;
+    /**
+     * 视频1数据buffer
+     */
+    private byte[] videoOneBuffer = new byte[VIDEO_BUFFER_LENGTH];
+    /**
+     * 视频1数据buffer
+     */
+    private byte[] videoTwoBuffer = new byte[VIDEO_BUFFER_LENGTH];
+
+
     private boolean isUsbConnect = false;
     /**
      * USB 获取数据超时时间
      */
-    private final static int TRANSFER_TIMEOUT = 1000;
-    private byte[] uavReceiverBytes = new byte[512];
+    private final static int POINT_TIMEOUT = 1000;
 
     public void init(Context context) {
         UsbManager usbManager = (UsbManager) context.getSystemService(Context.USB_SERVICE);
         HashMap<String, UsbDevice> deviceHashMap = usbManager.getDeviceList();
         UsbDevice usbDevice = null;
         for (UsbDevice device : deviceHashMap.values()) {
-            Log.w(TAG, device.toString());
+//            Log.w(TAG, "init : " +device.toString());
             int vendorId = device.getVendorId();
             if (device.getVendorId() == 0x0000 || device.getVendorId() == 0x04b4 || device.getVendorId() == 0x0951 ||
                     device.getVendorId() == 0x483 || device.getVendorId() == 0xAAAA) {
                 usbDevice = device;
-                Log.i(TAG, "找到设备 : " + vendorId);
+                Log.i(TAG, "init 找到设备 : " + vendorId);
             }
         }
         if (null == usbDevice) {
@@ -109,7 +125,7 @@ public class UsbHostManager {
     }
 
     private void connectUsbAndFindEndPoint(UsbManager usbManager, UsbDevice usbDevice) {
-        Log.i(TAG, "有权限，直接去打开usb 连接");
+        Log.i(TAG, "有权限，去打开usb 连接");
         interfaceCount = usbDevice.getInterfaceCount();
         if (interfaceCount > 0) {
             mDeviceConnection = usbManager.openDevice(usbDevice);
@@ -120,27 +136,35 @@ public class UsbHostManager {
             mInterfaceArray = new UsbInterface[interfaceCount];
             for (int i = 0; i < interfaceCount; i++) {
                 mInterfaceArray[i] = usbDevice.getInterface(i);
-                Log.v(TAG, i + ", " + mInterfaceArray[i]);
+//                Log.v(TAG, i + ", " + mInterfaceArray[i]);
                 findEndPoint(mInterfaceArray[i]);
             }
             //
-            if (null != endpointInUavData && (null != endpointInVideoOneData || null != endpointInVideoTwoData) && endpointOutSendData != null) {
+            if (null != endpointInUavData && endpointOutSendData != null) {
                 isUsbConnect = true;
+                Log.v(TAG, "usb 已连接");
+                startOutSendData();
                 startCaptureUavStream();
+                if (null != endpointInVideoOneData) {
+                    startCaptureVideoOneStream();
+                }
+                if (null != endpointInVideoTwoData) {
+                    startCaptureVideoTwoStream();
+                }
             }
         }
     }
 
     private void findEndPoint(UsbInterface usbInterface) {
         boolean claim_interface = mDeviceConnection.claimInterface(usbInterface, true);
-        Log.i(TAG, "claim_interface = " + claim_interface);
+//        Log.i(TAG, "claim_interface = " + claim_interface);
         if (claim_interface) {
             int count_endpoint = usbInterface.getEndpointCount();
             for (int i = 0; i < count_endpoint; i++) {
                 UsbEndpoint usb_endpoint = usbInterface.getEndpoint(i);
                 int direction = usb_endpoint.getDirection();
                 int number = usb_endpoint.getEndpointNumber();
-                Log.w(TAG, "direction = " + direction + ", number = " + number);
+//                Log.w(TAG, "direction = " + direction + ", number = " + number);
                 if (UsbConstants.USB_DIR_IN == direction) {
                     switch (number) {
                         case 0x04:
@@ -174,15 +198,15 @@ public class UsbHostManager {
             public void run() {
                 int length, msgId, data_length;
                 while (isUsbConnect) {
-                    length = mDeviceConnection.bulkTransfer(endpointInUavData, uavReceiverBytes, uavReceiverBytes.length, TRANSFER_TIMEOUT);
-                    if (length >= UsbHostConfig.MIN_ARTOSYN_LENGTH) {
-                        Log.i(TAG, "usb data : " + ByteTransUtil.bytesToHexStr(uavReceiverBytes));
-                        if (UsbHostConfig.HEART_FIRST == uavReceiverBytes[0] && UsbHostConfig.HEART_SECOND == uavReceiverBytes[1]) {
-                            msgId = LinkTransUtil.getUnsignedShort(uavReceiverBytes[2], uavReceiverBytes[3]);
-                            data_length = LinkTransUtil.getUnsignedShort(uavReceiverBytes[6], uavReceiverBytes[7]);
+                    length = mDeviceConnection.bulkTransfer(endpointInUavData, uavBuffer, uavBuffer.length, POINT_TIMEOUT);
+                    if (length >= UsbHostConfig.LENGTH_HEAD) {
+//                        Log.i(TAG, "uav data : " + ByteTransUtil.bytesToHexStr(uavBuffer));
+                        if (UsbHostConfig.HEAD_FIRST == uavBuffer[0] && UsbHostConfig.HEAD_SECOND == uavBuffer[1]) {
+                            msgId = LinkTransUtil.getUnsignedShort(uavBuffer[2], uavBuffer[3]);
+                            data_length = LinkTransUtil.getUnsignedShort(uavBuffer[6], uavBuffer[7]);
                             if (data_length > 0 && data_length < length) {
                                 byte[] data_bytes = new byte[data_length];
-                                System.arraycopy(uavReceiverBytes, UsbHostConfig.MIN_ARTOSYN_LENGTH, data_bytes, 0, data_length);
+                                System.arraycopy(uavBuffer, UsbHostConfig.LENGTH_HEAD, data_bytes, 0, data_length);
                                 Log.v(TAG, "transfer data : " + ByteTransUtil.bytesToHexStr(data_bytes));
                                 switch (msgId) {
                                     case UsbHostConfig.MSG_ID_TRANSFER_DATA:
@@ -209,20 +233,64 @@ public class UsbHostManager {
         });
     }
 
-    private void startCaptureVideoOneStream() {
-
-    }
-
-    private void startCaptureVideoTwoStream() {
-
-    }
+    private byte[] transferBytes;
+    private byte[] deviceInfoBytes;
+    private byte[] gsInfoBytes;
 
     /**
      * 给USB发送数据，图传心跳包
      * 如果不发，表明没有连接，图传就不会传输数据到USB
      */
     private void startOutSendData() {
+        mThreadPoolExecutor.scheduleWithFixedDelay(new Runnable() {
+            @Override
+            public void run() {
+                if (isUsbConnect) {
+                    if (null == transferBytes) {
+                        transferBytes = UsbHostConfig.packMsgIdBytes(UsbHostConfig.MSG_ID_TRANSFER_DATA);
+                    }
+                    if (null == deviceInfoBytes) {
+                        deviceInfoBytes = UsbHostConfig.packMsgIdBytes(UsbHostConfig.MSG_ID_DEVICE_INFO);
+                    }
+                    if (null == gsInfoBytes) {
+                        gsInfoBytes = UsbHostConfig.packMsgIdBytes(UsbHostConfig.MSG_ID_GS_INFO);
+                    }
+                    mDeviceConnection.bulkTransfer(endpointOutSendData, transferBytes, transferBytes.length, POINT_TIMEOUT);
+                    mDeviceConnection.bulkTransfer(endpointOutSendData, deviceInfoBytes, deviceInfoBytes.length, POINT_TIMEOUT);
+                    mDeviceConnection.bulkTransfer(endpointOutSendData, gsInfoBytes, gsInfoBytes.length, POINT_TIMEOUT);
+                }
+            }
+        }, 500, 300, TimeUnit.MILLISECONDS);
+    }
 
+    private void startCaptureVideoOneStream() {
+        mThreadPoolExecutor.execute(new Runnable() {
+            @Override
+            public void run() {
+                int length;
+                while (isUsbConnect) {
+                    length = mDeviceConnection.bulkTransfer(endpointInVideoOneData, videoOneBuffer, VIDEO_BUFFER_LENGTH, POINT_TIMEOUT);
+                    if (length > 0) {
+                        Log.i(TAG, "video one length = " + length);
+                    }
+                }
+            }
+        });
+    }
+
+    private void startCaptureVideoTwoStream() {
+        mThreadPoolExecutor.execute(new Runnable() {
+            @Override
+            public void run() {
+                int length;
+                while (isUsbConnect) {
+                    length = mDeviceConnection.bulkTransfer(endpointInVideoTwoData, videoTwoBuffer, VIDEO_BUFFER_LENGTH, POINT_TIMEOUT);
+                    if (length > 0) {
+                        Log.i(TAG, "video two length = " + length);
+                    }
+                }
+            }
+        });
     }
 
     private void requestPermission(Context context, UsbManager usbManager, UsbDevice usbDevice) {

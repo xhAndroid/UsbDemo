@@ -25,15 +25,13 @@ class UsbHostConfig {
      * Byte 10 : Payload 数据，可以没有
      */
 
-    public static final int MIN_ARTOSYN_LENGTH = 10;
+    public static final int LENGTH_HEAD = 10;
 
     /**
      * 包头
      */
-    public static final byte HEART_FIRST = (byte) 0xFF;
-    public static final byte HEART_SECOND = (byte) 0x5A;
-
-
+    public static final byte HEAD_FIRST = (byte) 0xFF;
+    public static final byte HEAD_SECOND = (byte) 0x5A;
 
     /**
      * 2.1 频段选择
@@ -55,5 +53,44 @@ class UsbHostConfig {
      * 2.6 使能对频
      */
     public static final byte MSG_ID_ENABLE_FREQUENCY = (byte) 0x5B;
+
+    public static byte[] packMsgIdBytes(int msgId, byte[] payload) {
+        int data_length = (payload == null) ? 0 : payload.length;
+        byte[] pack_bytes = new byte[LENGTH_HEAD + data_length];
+        // 校验和
+        int check_sum = 0;
+        // 固定头部
+        pack_bytes[0] = HEAD_FIRST;
+        pack_bytes[1] = HEAD_SECOND;
+        // msgid
+        pack_bytes[2] = (byte) (msgId & 0xFF);
+        pack_bytes[3] = (byte) ((msgId >> 8) & 0xFF);
+        // 只有一包 0x01
+        pack_bytes[4] = 0x01;
+        // index 0x00
+        pack_bytes[5] = 0x00;
+        // 数据长度
+        pack_bytes[6] = (byte) (data_length & 0xFF);
+        pack_bytes[7] = (byte) ((data_length >> 8) & 0xFF);
+        if (data_length > 0) {
+            int i = 0;
+            for (byte data : payload) {
+                pack_bytes[LENGTH_HEAD + i] = data;
+                i++;
+                check_sum += (data & 0xFF);
+            }
+            check_sum = check_sum & 0x0FFFF;
+            pack_bytes[8] = (byte) (check_sum & 0xFF);
+            pack_bytes[9] = (byte) ((check_sum >> 8) & 0xFF);
+        } else {
+            pack_bytes[8] = 0x00;
+            pack_bytes[9] = 0x00;
+        }
+        return pack_bytes;
+    }
+
+    public static byte[] packMsgIdBytes(int msgId) {
+        return packMsgIdBytes(msgId, null);
+    }
 
 }
