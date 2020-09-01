@@ -1,5 +1,16 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.link.usb">
 
-    /
+    <!--usb主机模式-->
+    <uses-feature
+        android:name="android.hardware.usb.host"
+        android:required="true" />
+    <!-- https://developer.android.com/guide/topics/connectivity/usb/host?hl=zh-cn#java -->
+
+    <!--usb配件模式-->
+    <!--<uses-feature android:name="android.hardware.usb.accessory" />-->
+    <!-- https://developer.android.com/guide/topics/connectivity/usb/accessory?hl=zh-cn -->
+
+
+
 </manifest>

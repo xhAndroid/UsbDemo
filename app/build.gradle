@@ -34,4 +34,7 @@ dependencies {
     implementation 'androidx.recyclerview:recyclerview:1.1.0'
     implementation "com.google.android.material:material:1.2.0"
 
+    /** link usb  */
+    implementation project(':lib_link_usb')
+
 }
