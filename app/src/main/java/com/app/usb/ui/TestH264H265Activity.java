@@ -31,6 +31,7 @@ import androidx.appcompat.app.AppCompatActivity;
  * 1、Android平台对H264硬解码
  * https://blog.csdn.net/yqj234/article/details/51791476
  * 2、H265 硬解码
+ *
  * @author AppMan
  * @date Created on 2020/09/02
  */
@@ -50,8 +51,8 @@ public class TestH264H265Activity extends AppCompatActivity {
     private String h264Path = Environment.getExternalStorageDirectory() + File.separator + "720pq.h264";
     private String h265Path = Environment.getExternalStorageDirectory() + File.separator + "temp.h265";
     private File videoFile;
-    private InputStream is = null;
-    private FileInputStream fs = null;
+    private InputStream inputStream = null;
+    private FileInputStream fileInputStream = null;
 
     private SurfaceView mSurfaceView;
     private Button mReadButton;
@@ -68,7 +69,7 @@ public class TestH264H265Activity extends AppCompatActivity {
     private String mimeType = MediaFormat.MIMETYPE_VIDEO_AVC;
     private final static int VIDEO_WIDTH = 1280;
     private final static int VIDEO_HEIGHT = 720;
-    private final static int TIME_INTERNAL = 30;
+    private final static int TIME_INTERNAL = 100;
     private final static int HEAD_OFFSET = 512;
 
     @Override
@@ -87,22 +88,13 @@ public class TestH264H265Activity extends AppCompatActivity {
 
         mSurfaceView = (SurfaceView) findViewById(R.id.surfaceView1);
         mReadButton = (Button) findViewById(R.id.btn_readfile);
-        mReadButton.setText("Play : " + mimeType);
-        mReadButton.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                if (videoFile.exists()) {
-                    if (!isInit) {
-                        initDecoder();
-                        isInit = true;
-                    }
-
-                    readFileThread = new Thread(readFile);
-                    readFileThread.start();
-                } else {
-                    Toast.makeText(getApplicationContext(), "Video File Not Found!", Toast.LENGTH_SHORT).show();
-                }
+        mReadButton.setText(is_h265 ? "Play H265" : "Play H264");
+        mReadButton.setOnClickListener((View v) -> {
+            if (videoFile.exists()) {
+                initDecoder();
+                startReadFileThread();
+            } else {
+                Toast.makeText(getApplicationContext(), "Video File Not Found!", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -115,7 +107,11 @@ public class TestH264H265Activity extends AppCompatActivity {
         }
     }
 
-    public void initDecoder() {
+    private void initDecoder() {
+        if (isInit) {
+            return;
+        }
+        isInit = true;
         try {
             mCodec = MediaCodec.createDecoderByType(mimeType);
             MediaFormat mediaFormat = MediaFormat.createVideoFormat(mimeType, VIDEO_WIDTH, VIDEO_HEIGHT);
@@ -126,26 +122,25 @@ public class TestH264H265Activity extends AppCompatActivity {
             mCodec.configure(mediaFormat, mSurfaceView.getHolder().getSurface(), null, 0);
             mCodec.start();
         } catch (IOException e) {
+            isInit = false;
             e.printStackTrace();
         }
     }
 
     int mCount = 0;
 
-    public boolean onFrame(byte[] buf, int offset, int length) {
-        Log.e("Media", "onFrame start");
-        Log.e("Media", "onFrame Thread:" + Thread.currentThread().getId());
+    private boolean onFrame(byte[] buf, int offset, int length) {
+        Log.e(TAG, "onFrame start, Thread : " + Thread.currentThread().getId());
         // Get input buffer index
         ByteBuffer[] inputBuffers = mCodec.getInputBuffers();
         int inputBufferIndex = mCodec.dequeueInputBuffer(100);
 
-        Log.e("Media", "onFrame index:" + inputBufferIndex);
+        Log.e(TAG, "onFrame index:" + inputBufferIndex);
         if (inputBufferIndex >= 0) {
             ByteBuffer inputBuffer = inputBuffers[inputBufferIndex];
             inputBuffer.clear();
             inputBuffer.put(buf, offset, length);
-            mCodec.queueInputBuffer(inputBufferIndex, 0, length, mCount
-                    * TIME_INTERNAL, 0);
+            mCodec.queueInputBuffer(inputBufferIndex, 0, length, mCount * TIME_INTERNAL, 0);
             mCount++;
         } else {
             return false;
@@ -158,7 +153,7 @@ public class TestH264H265Activity extends AppCompatActivity {
             mCodec.releaseOutputBuffer(outputBufferIndex, true);
             outputBufferIndex = mCodec.dequeueOutputBuffer(bufferInfo, 0);
         }
-        Log.e("Media", "onFrame end");
+        Log.e(TAG, "onFrame end");
         return true;
     }
 
@@ -201,7 +196,7 @@ public class TestH264H265Activity extends AppCompatActivity {
         return false;
     }
 
-    Runnable readFile = new Runnable() {
+    Runnable readFileRunnable = new Runnable() {
 
         @Override
         public void run() {
@@ -211,37 +206,33 @@ public class TestH264H265Activity extends AppCompatActivity {
             byte[] framebuffer = new byte[200000];
             boolean readFlag = true;
             try {
-                fs = new FileInputStream(videoFile);
-                is = new BufferedInputStream(fs);
+                fileInputStream = new FileInputStream(videoFile);
+                inputStream = new BufferedInputStream(fileInputStream);
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
                 readFlag = false;
             }
             while (!Thread.interrupted() && readFlag) {
                 try {
-                    int length = is.available();
+                    int length = inputStream.available();
                     if (length > 0) {
                         // Read file and fill buffer
-                        int count = is.read(buffer);
-                        Log.i("count", "" + count);
+                        int count = inputStream.read(buffer);
                         h264Read += count;
-                        Log.d("Read", "count:" + count + " h264Read:"
-                                + h264Read);
+                        Log.d(TAG, "Read count = " + count + ", h264Read = " + h264Read);
                         // Fill frameBuffer
                         if (frameOffset + count < 200000) {
-                            System.arraycopy(buffer, 0, framebuffer,
-                                    frameOffset, count);
+                            System.arraycopy(buffer, 0, framebuffer, frameOffset, count);
                             frameOffset += count;
                         } else {
                             frameOffset = 0;
-                            System.arraycopy(buffer, 0, framebuffer,
-                                    frameOffset, count);
+                            System.arraycopy(buffer, 0, framebuffer, frameOffset, count);
                             frameOffset += count;
                         }
 
                         // Find H264 head
                         int offset = findHead(framebuffer, frameOffset);
-                        Log.i("find head", " Head:" + offset);
+                        Log.i(TAG, "Find  Head:" + offset);
                         while (offset > 0) {
                             if (checkHead(framebuffer, 0)) {
                                 // Fill decoder
@@ -252,7 +243,7 @@ public class TestH264H265Activity extends AppCompatActivity {
                                     System.arraycopy(temp, offset, framebuffer,
                                             0, frameOffset - offset);
                                     frameOffset -= offset;
-                                    Log.e("Check", "is Head:" + offset);
+                                    Log.e(TAG, "Check is Head : " + offset);
                                     // Continue finding head
                                     offset = findHead(framebuffer, frameOffset);
                                 }
@@ -260,28 +251,32 @@ public class TestH264H265Activity extends AppCompatActivity {
 
                                 offset = 0;
                             }
-
                         }
-                        Log.d("loop", "end loop");
+                        Log.d(TAG, "end loop");
                     } else {
-                        h264Read = 0;
-                        frameOffset = 0;
                         readFlag = false;
-                        // Start a new thread
-                        readFileThread = new Thread(readFile);
-                        readFileThread.start();
+                        startReadFileThread();
                     }
-
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
 
-                try {
-                    Thread.sleep(TIME_INTERNAL);
-                } catch (InterruptedException e) {
-
-                }
+                sleep();
             }
         }
     };
+
+    private void startReadFileThread() {
+        // Start a new thread
+        readFileThread = new Thread(readFileRunnable);
+        readFileThread.start();
+    }
+
+    private void sleep() {
+        try {
+            Thread.sleep(TIME_INTERNAL);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
 }
