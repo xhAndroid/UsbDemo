@@ -39,7 +39,8 @@
                 android:resource="@xml/device_filter" />
         </activity>
 
-        <activity android:name=".ui.TestH264H265Activity" />
+        <activity android:name=".ui.TestH264H265Activity"
+            android:screenOrientation="sensor"/>
 
     </application>
 

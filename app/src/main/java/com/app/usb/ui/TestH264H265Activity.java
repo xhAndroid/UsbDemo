@@ -1,5 +1,7 @@
 package com.app.usb.ui;
 
+import android.content.Context;
+import android.content.Intent;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.os.Bundle;
@@ -36,12 +38,18 @@ public class TestH264H265Activity extends AppCompatActivity {
 
     private static final String TAG = TestH264H265Activity.class.getSimpleName();
 
-    private static final boolean IS_H265 = true;
+    public static void startActivity(Context context, boolean is_h265) {
+        Intent intent = new Intent(context, TestH264H265Activity.class);
+        intent.putExtra(KEY_IS_H265, is_h265);
+        context.startActivity(intent);
+    }
+
+    private static final String KEY_IS_H265 = "KEY_IS_H265";
 
     // 注意外部SD卡目录一定要拷贝存在此文件
     private String h264Path = Environment.getExternalStorageDirectory() + File.separator + "720pq.h264";
     private String h265Path = Environment.getExternalStorageDirectory() + File.separator + "temp.h265";
-    private File h264File = new File(IS_H265 ? h265Path : h264Path);
+    private File videoFile;
     private InputStream is = null;
     private FileInputStream fs = null;
 
@@ -57,7 +65,7 @@ public class TestH264H265Activity extends AppCompatActivity {
      * "video/avc" : H.264 Advanced Video
      * "video/hevc" : H.265 Advanced Video
      */
-    private final static String MIME_TYPE = IS_H265 ? MediaFormat.MIMETYPE_VIDEO_HEVC : MediaFormat.MIMETYPE_VIDEO_AVC;
+    private String mimeType = MediaFormat.MIMETYPE_VIDEO_AVC;
     private final static int VIDEO_WIDTH = 1280;
     private final static int VIDEO_HEIGHT = 720;
     private final static int TIME_INTERNAL = 30;
@@ -68,14 +76,23 @@ public class TestH264H265Activity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_test_h264_h265);
 
+        boolean is_h265 = getIntent().getBooleanExtra(KEY_IS_H265, false);
+        if (is_h265) {
+            videoFile = new File(h265Path);
+            mimeType = MediaFormat.MIMETYPE_VIDEO_HEVC;
+        } else {
+            videoFile = new File(h264Path);
+            mimeType = MediaFormat.MIMETYPE_VIDEO_AVC;
+        }
+
         mSurfaceView = (SurfaceView) findViewById(R.id.surfaceView1);
         mReadButton = (Button) findViewById(R.id.btn_readfile);
-        mReadButton.setText("Start : " + MIME_TYPE);
+        mReadButton.setText("Play : " + mimeType);
         mReadButton.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View v) {
-                if (h264File.exists()) {
+                if (videoFile.exists()) {
                     if (!isInit) {
                         initDecoder();
                         isInit = true;
@@ -100,8 +117,8 @@ public class TestH264H265Activity extends AppCompatActivity {
 
     public void initDecoder() {
         try {
-            mCodec = MediaCodec.createDecoderByType(MIME_TYPE);
-            MediaFormat mediaFormat = MediaFormat.createVideoFormat(MIME_TYPE, VIDEO_WIDTH, VIDEO_HEIGHT);
+            mCodec = MediaCodec.createDecoderByType(mimeType);
+            MediaFormat mediaFormat = MediaFormat.createVideoFormat(mimeType, VIDEO_WIDTH, VIDEO_HEIGHT);
             // 关键帧频率，请求关键帧之间的秒数间隔。
             mediaFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 60);
             // 1 表示 停止播放时设置为黑色空白
@@ -194,7 +211,7 @@ public class TestH264H265Activity extends AppCompatActivity {
             byte[] framebuffer = new byte[200000];
             boolean readFlag = true;
             try {
-                fs = new FileInputStream(h264File);
+                fs = new FileInputStream(videoFile);
                 is = new BufferedInputStream(fs);
             } catch (FileNotFoundException e) {
                 e.printStackTrace();

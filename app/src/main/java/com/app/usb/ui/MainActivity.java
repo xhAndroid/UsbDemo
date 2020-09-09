@@ -41,7 +41,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.btn_h264:
-                startActivity(new Intent(this, TestH264H265Activity.class));
+                TestH264H265Activity.startActivity(this, false);
+                break;
+            case R.id.btn_h265:
+                TestH264H265Activity.startActivity(this, true);
                 break;
         }
     }
