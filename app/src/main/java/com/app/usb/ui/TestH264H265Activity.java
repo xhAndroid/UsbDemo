@@ -101,7 +101,7 @@ public class TestH264H265Activity extends AppCompatActivity {
                     readFileThread = new Thread(readFile);
                     readFileThread.start();
                 } else {
-                    Toast.makeText(getApplicationContext(), "H264 file not found", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Video File Not Found!", Toast.LENGTH_SHORT).show();
                 }
             }
         });
