@@ -1,0 +1,3 @@
+include ':lib_link_usb'
+include ':app'
+rootProject.name = "UsbDemo"
