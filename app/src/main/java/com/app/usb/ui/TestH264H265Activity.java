@@ -189,8 +189,7 @@ public class TestH264H265Activity extends AppCompatActivity {
                             if (flag) {
                                 byte[] temp = framebuffer;
                                 framebuffer = new byte[200000];
-                                System.arraycopy(temp, offset, framebuffer,
-                                        0, frameOffset - offset);
+                                System.arraycopy(temp, offset, framebuffer, 0, frameOffset - offset);
                                 frameOffset -= offset;
                                 Log.e(TAG, "Check is Head : " + offset);
                                 // Continue finding head
