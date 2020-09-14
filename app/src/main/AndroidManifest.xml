@@ -28,12 +28,17 @@
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity android:name=".ui.UsbDataActivity">
+            <intent-filter>
                 <!-- 发现USB设备 -->
                 <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
                 <!-- 终止USB设备的通信 -->
                 <action android:name="android.hardware.usb.action.USB_DEVICE_DETACHED" />
             </intent-filter>
-            <!-- USB_DEVICE_ATTACHED 发现设备 -->
+            <!-- USB_DEVICE 过滤USB设备 -->
             <meta-data
                 android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
                 android:resource="@xml/device_filter" />

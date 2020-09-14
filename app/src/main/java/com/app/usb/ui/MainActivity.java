@@ -4,12 +4,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
-import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 
 import com.app.usb.R;
-import com.link.usb.UsbHostManager;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -18,7 +16,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         requestPermissions();
-        UsbHostManager.getInstance().init(this);
     }
 
     private void requestPermissions() {
@@ -32,12 +29,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     @Override
-    protected void onDestroy() {
-        UsbHostManager.getInstance().releaseUsb(this);
-        super.onDestroy();
-    }
-
-    @Override
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.btn_h264:
@@ -45,6 +36,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
             case R.id.btn_h265:
                 TestH264H265Activity.startActivity(this, true);
+                break;
+            case R.id.btn_usb_data:
+                UsbDataActivity.startActivity(this);
                 break;
         }
     }

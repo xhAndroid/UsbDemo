@@ -204,6 +204,12 @@ public class UsbHostManager {
         }
     }
 
+    private IUsbHostResponseListener iUsbHostResponseListener;
+
+    public void setUsbHostResponseListener(IUsbHostResponseListener listener) {
+        this.iUsbHostResponseListener = listener;
+    }
+
     /**
      * 启动获取USB飞控数据流，子线程
      */
@@ -226,6 +232,9 @@ public class UsbHostManager {
                                 switch (msgId) {
                                     case UsbHostConfig.MSG_ID_TRANSFER_DATA:
                                         // 飞控数据
+                                        if (iUsbHostResponseListener != null) {
+                                            iUsbHostResponseListener.onUavDataResponse(data_bytes);
+                                        }
                                         break;
                                     case UsbHostConfig.MSG_ID_GS_INFO:
                                         // 地面端信号质量（该值必须是模块已连接成功才有效，取值范围 0-100，值越大，信号越好）
@@ -298,6 +307,11 @@ public class UsbHostManager {
                     length = mDeviceConnection.bulkTransfer(endpointInVideoOneData, videoOneBuffer, VIDEO_BUFFER_LENGTH, POINT_TIMEOUT);
                     if (length > 0) {
                         Log.i(TAG, "video one length = " + length);
+                        byte[] data_bytes = new byte[length];
+                        System.arraycopy(uavBuffer, 0, data_bytes, 0, length);
+                        if (iUsbHostResponseListener != null) {
+                            iUsbHostResponseListener.onVideoOneResponse(data_bytes);
+                        }
                     }
                 }
             }
@@ -313,6 +327,11 @@ public class UsbHostManager {
                     length = mDeviceConnection.bulkTransfer(endpointInVideoTwoData, videoTwoBuffer, VIDEO_BUFFER_LENGTH, POINT_TIMEOUT);
                     if (length > 0) {
                         Log.i(TAG, "video two length = " + length);
+                        byte[] data_bytes = new byte[length];
+                        System.arraycopy(videoTwoBuffer, 0, data_bytes, 0, length);
+                        if (iUsbHostResponseListener != null) {
+                            iUsbHostResponseListener.onVideoTwoResponse(data_bytes);
+                        }
                     }
                 }
             }
