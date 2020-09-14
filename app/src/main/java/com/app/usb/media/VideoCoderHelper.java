@@ -1,4 +1,4 @@
-package com.app.usb.ui;
+package com.app.usb.media;
 
 /**
  * -----------------------------------------------------------------
@@ -39,7 +39,7 @@ public class VideoCoderHelper {
      * @param offset
      * @return whether the src buffer is frame head
      */
-    static boolean checkHead(byte[] buffer, int offset) {
+    public static boolean checkHead(byte[] buffer, int offset) {
         // 00 00 00 01
         if (buffer[offset] == 0 && buffer[offset + 1] == 0
                 && buffer[offset + 2] == 0 && buffer[3] == 1)

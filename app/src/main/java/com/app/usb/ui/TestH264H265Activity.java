@@ -13,6 +13,7 @@ import android.widget.Button;
 import android.widget.Toast;
 
 import com.app.usb.R;
+import com.app.usb.media.VideoCoderHelper;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -84,8 +85,8 @@ public class TestH264H265Activity extends AppCompatActivity {
             mimeType = MediaFormat.MIMETYPE_VIDEO_AVC;
         }
 
-        mSurfaceView = (SurfaceView) findViewById(R.id.surfaceView1);
-        mReadButton = (Button) findViewById(R.id.btn_readfile);
+        mSurfaceView = findViewById(R.id.surfaceView1);
+        mReadButton = findViewById(R.id.btn_readfile);
         mReadButton.setText(is_h265 ? "Play H265" : "Play H264");
         mReadButton.setOnClickListener((View v) -> {
             if (videoFile.exists()) {
@@ -133,7 +134,6 @@ public class TestH264H265Activity extends AppCompatActivity {
         ByteBuffer[] inputBuffers = mCodec.getInputBuffers();
         int inputBufferIndex = mCodec.dequeueInputBuffer(100);
         Log.e(TAG, "onFrame inputBufferIndex:" + inputBufferIndex);
-
         if (inputBufferIndex >= 0) {
             ByteBuffer inputBuffer = inputBuffers[inputBufferIndex];
             inputBuffer.clear();

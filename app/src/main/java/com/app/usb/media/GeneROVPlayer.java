@@ -1,4 +1,4 @@
-package com.app.usb.ui;
+package com.app.usb.media;
 
 
 import android.media.MediaCodec;
