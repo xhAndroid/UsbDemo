@@ -27,5 +27,5 @@ public interface IUsbHostResponseListener {
      * 视频二返回的数据
      * @param data_bytes
      */
-    void onVideoTwoResponse(byte[] data_bytes);
+    void onVideoTwoResponse(@NonNull byte[] data_bytes, int length);
 }

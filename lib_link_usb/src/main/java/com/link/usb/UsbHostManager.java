@@ -330,11 +330,11 @@ public class UsbHostManager {
                 while (isUsbConnect) {
                     length = mDeviceConnection.bulkTransfer(endpointInVideoTwoData, videoTwoBuffer, VIDEO_BUFFER_LENGTH, POINT_TIMEOUT);
                     if (length > 0) {
-                        Log.i(TAG, "video two length = " + length);
-                        byte[] data_bytes = new byte[length];
-                        System.arraycopy(videoTwoBuffer, 0, data_bytes, 0, length);
+//                        Log.i(TAG, "video two length = " + length);
+//                        byte[] data_bytes = new byte[length];
+//                        System.arraycopy(videoTwoBuffer, 0, data_bytes, 0, length);
                         if (iUsbHostResponseListener != null) {
-                            iUsbHostResponseListener.onVideoTwoResponse(data_bytes);
+                            iUsbHostResponseListener.onVideoTwoResponse(videoTwoBuffer, length);
                         }
                     }
                 }

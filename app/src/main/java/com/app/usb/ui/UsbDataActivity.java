@@ -85,7 +85,7 @@ public class UsbDataActivity extends AppCompatActivity implements IUsbHostRespon
     }
 
     @Override
-    public void onVideoTwoResponse(byte[] data_bytes) {
+    public void onVideoTwoResponse(@NonNull byte[] data_bytes, int length) {
 
     }
 }
