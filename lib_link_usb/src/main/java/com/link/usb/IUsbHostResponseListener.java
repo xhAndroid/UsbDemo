@@ -1,5 +1,7 @@
 package com.link.usb;
 
+import androidx.annotation.NonNull;
+
 /**
  * -----------------------------------------------------------------
  * Copyright (C) by AppMan, All rights reserved.
@@ -20,7 +22,7 @@ public interface IUsbHostResponseListener {
      * 视频一返回的数据
      * @param data_bytes
      */
-    void onVideoOneResponse(byte[] data_bytes);
+    void onVideoOneResponse(@NonNull byte[] data_bytes, int length);
     /**
      * 视频二返回的数据
      * @param data_bytes

@@ -56,7 +56,7 @@ public class TestH264H265Activity extends AppCompatActivity {
 
     private SurfaceView mSurfaceView;
     private Button mReadButton;
-    private MediaCodec mCodec;
+    private MediaCodec mediaCodec;
 
     private Thread readFileThread;
     private boolean isInit = false;
@@ -112,14 +112,14 @@ public class TestH264H265Activity extends AppCompatActivity {
         }
         isInit = true;
         try {
-            mCodec = MediaCodec.createDecoderByType(mimeType);
+            mediaCodec = MediaCodec.createDecoderByType(mimeType);
             MediaFormat mediaFormat = MediaFormat.createVideoFormat(mimeType, VIDEO_WIDTH, VIDEO_HEIGHT);
             // 关键帧频率，请求关键帧之间的xx秒数间隔。
             mediaFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 60);
             // 1 表示 停止播放时设置为黑色空白
             ///mediaFormat.setInteger(MediaFormat.KEY_PUSH_BLANK_BUFFERS_ON_STOP,  1);
-            mCodec.configure(mediaFormat, mSurfaceView.getHolder().getSurface(), null, 0);
-            mCodec.start();
+            mediaCodec.configure(mediaFormat, mSurfaceView.getHolder().getSurface(), null, 0);
+            mediaCodec.start();
         } catch (IOException e) {
             isInit = false;
             e.printStackTrace();
@@ -131,14 +131,14 @@ public class TestH264H265Activity extends AppCompatActivity {
     private boolean onFrame(byte[] buf, int offset, int length) {
         Log.e(TAG, "onFrame start, Thread : " + Thread.currentThread().getId());
         // Get input buffer index
-        ByteBuffer[] inputBuffers = mCodec.getInputBuffers();
-        int inputBufferIndex = mCodec.dequeueInputBuffer(100);
+        ByteBuffer[] inputBuffers = mediaCodec.getInputBuffers();
+        int inputBufferIndex = mediaCodec.dequeueInputBuffer(100);
         Log.e(TAG, "onFrame inputBufferIndex:" + inputBufferIndex);
         if (inputBufferIndex >= 0) {
             ByteBuffer inputBuffer = inputBuffers[inputBufferIndex];
             inputBuffer.clear();
             inputBuffer.put(buf, offset, length);
-            mCodec.queueInputBuffer(inputBufferIndex, 0, length, mCount * 1000000 / 60, 0);
+            mediaCodec.queueInputBuffer(inputBufferIndex, 0, length, mCount * 1000000 / 60, 0);
             mCount++;
         } else {
             return false;
@@ -146,10 +146,10 @@ public class TestH264H265Activity extends AppCompatActivity {
 
         // Get output buffer index
         MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
-        int outputBufferIndex = mCodec.dequeueOutputBuffer(bufferInfo, 100);
+        int outputBufferIndex = mediaCodec.dequeueOutputBuffer(bufferInfo, 100);
         while (outputBufferIndex >= 0) {
-            mCodec.releaseOutputBuffer(outputBufferIndex, true);
-            outputBufferIndex = mCodec.dequeueOutputBuffer(bufferInfo, 0);
+            mediaCodec.releaseOutputBuffer(outputBufferIndex, true);
+            outputBufferIndex = mediaCodec.dequeueOutputBuffer(bufferInfo, 0);
         }
         Log.e(TAG, "onFrame end");
         return true;

@@ -53,13 +53,12 @@ public class UsbHostManager {
     private ScheduledThreadPoolExecutor mThreadPoolExecutor;
 
     private UsbHostManager() {
-        mThreadPoolExecutor = new ScheduledThreadPoolExecutor(6);
+        mThreadPoolExecutor = new ScheduledThreadPoolExecutor(4);
     }
 
     public void releaseUsb(Context context) {
         if (isUsbConnect) {
             isUsbConnect = false;
-            mThreadPoolExecutor.shutdown();
             if (null != mInterfaceArray && mDeviceConnection != null) {
                 for (UsbInterface usbInterface : mInterfaceArray) {
                     mDeviceConnection.releaseInterface(usbInterface);
@@ -155,32 +154,22 @@ public class UsbHostManager {
                 findEndPoint(mInterfaceArray[i]);
             }
             //
-            if (null != endpointInUavData && endpointOutSendData != null) {
-                isUsbConnect = true;
-                Log.v(TAG, "usb 已连接");
-                startOutSendData();
-                startCaptureUavStream();
-                if (null != endpointInVideoOneData) {
-                    startCaptureVideoOneStream();
-                }
-                if (null != endpointInVideoTwoData) {
-                    startCaptureVideoTwoStream();
-                }
-            }
+            startExecuteRunner();
         }
     }
 
     private void findEndPoint(UsbInterface usbInterface) {
         boolean claim_interface = mDeviceConnection.claimInterface(usbInterface, true);
-//        Log.i(TAG, "claim_interface = " + claim_interface);
+//        Log.i(TAG, "findEndPoint claim_interface = " + claim_interface);
         if (claim_interface) {
             int count_endpoint = usbInterface.getEndpointCount();
             for (int i = 0; i < count_endpoint; i++) {
                 UsbEndpoint usb_endpoint = usbInterface.getEndpoint(i);
                 int direction = usb_endpoint.getDirection();
                 int number = usb_endpoint.getEndpointNumber();
-//                Log.w(TAG, "direction = " + direction + ", number = " + number);
+                Log.v(TAG, "findEndPoint direction = " + ByteTransUtil.byteToHexStr((byte) direction) + ", " + (UsbConstants.USB_DIR_IN == direction));
                 if (UsbConstants.USB_DIR_IN == direction) {
+                    Log.w(TAG, "findEndPoint number = " + number);
                     switch (number) {
                         case 0x04:
                         case 0x08:
@@ -201,6 +190,21 @@ public class UsbHostManager {
             }
         } else {
             Log.e(TAG, "usb 连接打开接口失败 。 节点=" + usbInterface.toString());
+        }
+    }
+
+    private void startExecuteRunner() {
+        if (null != endpointInUavData && endpointOutSendData != null) {
+            isUsbConnect = true;
+            Log.v(TAG, "usb 已连接");
+            startOutSendData();
+            startCaptureUavStream();
+            if (null != endpointInVideoOneData) {
+                startCaptureVideoOneStream();
+            }
+            if (null != endpointInVideoTwoData) {
+                startCaptureVideoTwoStream();
+            }
         }
     }
 
@@ -228,7 +232,7 @@ public class UsbHostManager {
                             if (data_length > 0 && data_length < length) {
                                 byte[] data_bytes = new byte[data_length];
                                 System.arraycopy(uavBuffer, UsbHostConfig.LENGTH_HEAD, data_bytes, 0, data_length);
-                                Log.v(TAG, "transfer data : " + ByteTransUtil.bytesToHexStr(data_bytes));
+//                                Log.v(TAG, "transfer data : " + ByteTransUtil.bytesToHexStr(data_bytes));
                                 switch (msgId) {
                                     case UsbHostConfig.MSG_ID_TRANSFER_DATA:
                                         // 飞控数据
@@ -241,12 +245,12 @@ public class UsbHostManager {
                                         int gs_rssi = data_bytes[3];
                                         // 天空端信号质量（该值必须是模块已连接成功才有效，取值范围 0-100，值越大，信号越好）
                                         int air_rssi = data_bytes[4];
-                                        Log.i(TAG, "transfer, gs_rssi : " + gs_rssi + ", air_rssi : " + air_rssi);
+//                                        Log.i(TAG, "transfer, gs_rssi : " + gs_rssi + ", air_rssi : " + air_rssi);
                                         break;
                                     case UsbHostConfig.MSG_ID_DEVICE_INFO:
                                         // 图传频段信息， 0x01 表示设备频段为 2.4G， 0x02 表示设备频段为 5.8G
                                         int band = data_bytes[1];
-                                        Log.i(TAG, "transfer, band : " + band);
+//                                        Log.i(TAG, "transfer, band : " + band);
                                         break;
                                     default:
                                         Log.w(TAG, "transfer, switch.default : " + msgId);
@@ -306,11 +310,11 @@ public class UsbHostManager {
                 while (isUsbConnect) {
                     length = mDeviceConnection.bulkTransfer(endpointInVideoOneData, videoOneBuffer, VIDEO_BUFFER_LENGTH, POINT_TIMEOUT);
                     if (length > 0) {
-                        Log.i(TAG, "video one length = " + length);
-                        byte[] data_bytes = new byte[length];
-                        System.arraycopy(uavBuffer, 0, data_bytes, 0, length);
+//                        Log.i(TAG, "video one length = " + length);
+//                        byte[] data_bytes = new byte[length];
+//                        System.arraycopy(videoOneBuffer, 0, data_bytes, 0, length);
                         if (iUsbHostResponseListener != null) {
-                            iUsbHostResponseListener.onVideoOneResponse(data_bytes);
+                            iUsbHostResponseListener.onVideoOneResponse(videoOneBuffer, length);
                         }
                     }
                 }
