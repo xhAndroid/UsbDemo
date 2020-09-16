@@ -18,7 +18,8 @@ public class ByteInOutBuffer {
     /**
      * 队列大小 5 M
      */
-    private static final int BUFFER_SIZE = 1000 * 1000;
+//    private static final int BUFFER_SIZE = 200;
+    private static final int BUFFER_SIZE = 5 * 1000 * 1000;
     /**
      * 缓存 byte[]
      */

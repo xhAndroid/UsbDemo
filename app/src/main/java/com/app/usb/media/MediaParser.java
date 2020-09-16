@@ -28,19 +28,21 @@ public class MediaParser {
     private static final byte H_65 = (byte) 0x65;
     private static final byte H_67 = (byte) 0x67;
 
+
+    private static final int MAX_ONE_FRAME_SIZE = 50 * 1024;
+    private static final int MIN_ONE_FRAME_SIZE = 200;
+
     private static final int HEAD_LENGTH = 5;
 
     private static final int NOT_GOOD = -1;
-    private static final int MAX_ONE_FRAME_SIZE = 50 * 1024;
-    private static final int MIN_ONE_FRAME_SIZE = 200;
-    /**
-     * 一帧的大小
-     */
-    private int oneFrameSize = 0;
     /**
      * 返回大小
      */
     private int resultSize = NOT_GOOD;
+    /**
+     * 一帧的大小
+     */
+    private int oneFrameSize = 0;
     /**
      * 第一次发现帧
      */
@@ -50,6 +52,13 @@ public class MediaParser {
      */
     private boolean isHeadFound = false;
     private boolean isInSendCondHead = false;
+
+//    public void reset() {
+//        this.oneFrameSize = 0;
+//        this.isNotFoundFirstFrame = true;
+//        this.isHeadFound = false;
+//        this.isInSendCondHead = false;
+//    }
 
     /**
      * @param b
