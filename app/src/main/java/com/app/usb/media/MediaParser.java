@@ -27,6 +27,7 @@ public class MediaParser {
     private static final byte H_61 = (byte) 0x61;
     private static final byte H_65 = (byte) 0x65;
     private static final byte H_67 = (byte) 0x67;
+    private static final byte H_68 = (byte) 0x68;
 
 
     private static final int MAX_ONE_FRAME_SIZE = 50 * 1024;
@@ -98,7 +99,7 @@ public class MediaParser {
                 break;
             case PARSE_STEP_FOUR:
                 // 当发现一帧时，将计数结果返回
-                if (H_41 == b || H_61 == b || H_65 == b || H_67 == b) {
+                if (H_41 == b || H_61 == b || H_65 == b || H_67 == b || H_68 == b) {
                     // 没有发现第一帧
                     if (isNotFoundFirstFrame) {
                         isNotFoundFirstFrame = false;

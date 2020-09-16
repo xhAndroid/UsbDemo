@@ -36,19 +36,44 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.btn_h264:
-//                TestH264H265Activity.startActivity(this, false);
+                TestH264H265Activity.startActivity(this, false);
                 testWrite();
                 break;
             case R.id.btn_h265:
-//                TestH264H265Activity.startActivity(this, true);
+                TestH264H265Activity.startActivity(this, true);
                 testRead();
                 break;
             case R.id.btn_usb_data:
                 UsbDataActivity.startActivity(this);
-//                testParseByte();
+//                startRw();
                 break;
         }
     }
+
+    private void startRw() {
+        if (isTestRw) {
+            return;
+        }
+        isTestRw = true;
+        new Thread(writeRunner).start();
+        new Thread(readRunner).start();;
+    }
+
+    private boolean isTestRw = false;
+
+    private Runnable writeRunner = () -> {
+        while (isTestRw) {
+            testWrite();
+            sleep(5);
+        }
+    };
+
+    private Runnable readRunner = () -> {
+        while (isTestRw) {
+            testRead();
+            sleep(5);
+        }
+    };
 
     private byte[] testBytes = new byte[]{(byte) 0xA1, (byte) 0xA2, (byte) 0xA3, (byte) 0xA4, (byte) 0xA5,
             (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x01, (byte) 0x41, (byte) 0xB1, (byte) 0xB2, (byte) 0xB3, (byte) 0xB4, (byte) 0xB5, (byte) 0xB6,
@@ -56,28 +81,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x01, (byte) 0x41, (byte) 0xF1, (byte) 0xF2, (byte) 0xF3, (byte) 0xF4, (byte) 0xF5, (byte) 0xF6, (byte) 0xF7, (byte) 0xF8
     };
 
-    private MediaParser mediaParser = new MediaParser();
-
-//    private int readIndex = 0;
-//
-//    private void testParseByte() {
-//        int size;
-//        for (byte b : testBytes) {
-//            size = mediaParser.parseByte(b);
-//            if (size > 0) {
-//                byte[] v_bytes = new byte[size];
-//                System.arraycopy(testBytes, readIndex, v_bytes, 0, size);
-//                readIndex += size;
-//                Log.e("TEST", "size = " + size + " : " + ByteTransUtil.byteToHexStr(v_bytes));
-//            }
-//        }
-//    }
-
     private ByteInOutBuffer inOutBuffer = new ByteInOutBuffer();
 
     private void testWrite() {
         inOutBuffer.write(testBytes, testBytes.length);
     }
+
+    private MediaParser mediaParser = new MediaParser();
 
     private void testRead() {
         if (inOutBuffer.isCanRead()) {
@@ -85,7 +95,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             for (int i = 0; i < inOutBuffer.getValidSize(); i++) {
                 byte b = inOutBuffer.getByteByIndex(i);
                 parser_result = mediaParser.parseByte(b);
-                Log.v("TEST", i + ", readIndex = " + inOutBuffer.getReadIndex() + ", " + ByteTransUtil.byteToHexStr(b));
+//                Log.v("TEST", i + ", readIndex = " + inOutBuffer.getReadIndex() + ", " + ByteTransUtil.byteToHexStr(b));
                 if (parser_result > 0) {
                     byte[] frame_bytes = new byte[parser_result];
                     inOutBuffer.read(frame_bytes, parser_result);
@@ -93,6 +103,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     break;
                 }
             }
+        }
+    }
+
+    private void sleep(long time_ms) {
+        try {
+            Thread.sleep(time_ms);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 }

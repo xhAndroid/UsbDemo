@@ -316,9 +316,9 @@ public class UsbHostManager {
 //                        Log.i(TAG, "video one length = " + length);
 //                        byte[] data_bytes = new byte[length];
 //                        System.arraycopy(videoOneBuffer, 0, data_bytes, 0, length);
-//                        if (iUsbHostResponseListener != null) {
-//                            iUsbHostResponseListener.onVideoOneResponse(videoOneBuffer, length);
-//                        }
+                        if (iUsbHostResponseListener != null) {
+                            iUsbHostResponseListener.onVideoOneResponse(videoOneBuffer, length);
+                        }
                     }
                 }
             }
