@@ -11,7 +11,7 @@ public final class ByteTransUtil {
      * @param bArr byte数组
      * @return String 每个Byte值之间空格分隔
      */
-    public static String bytesToHexStr(byte[] bArr) {
+    public static String byteToHexStr(byte[] bArr) {
         if (bArr == null) {
             return null;
         }
@@ -25,7 +25,7 @@ public final class ByteTransUtil {
         return sb.toString().toUpperCase().trim();
     }
 
-    public static String bytesToHexNoEmptyStr(byte[] bArr) {
+    public static String byteToHexNoEmptyStr(byte[] bArr) {
         if (bArr == null) {
             return null;
         }
@@ -39,7 +39,7 @@ public final class ByteTransUtil {
     }
 
     public static String byteToHexStr(byte b) {
-        return bytesToHexStr(new byte[]{b});
+        return byteToHexStr(new byte[]{b});
     }
 
     /**

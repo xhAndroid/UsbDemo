@@ -38,11 +38,11 @@ public class ByteInOutBuffer {
      * @return
      */
     public int getValidSize() {
-        int size = (writeIndex - readIndex);
-        if (size < 0) {
-            return BUFFER_SIZE + size;
+        if (writeIndex < readIndex) {
+            return BUFFER_SIZE - readIndex + writeIndex;
+        } else {
+            return writeIndex - readIndex;
         }
-        return size;
     }
 
     public boolean isCanRead() {
@@ -51,6 +51,10 @@ public class ByteInOutBuffer {
 
     public byte getByteByIndex(int i) {
         return buffer[(readIndex + i) % BUFFER_SIZE];
+    }
+
+    public int getReadIndex() {
+        return readIndex;
     }
 
     /**
@@ -63,24 +67,28 @@ public class ByteInOutBuffer {
     public int read(byte[] put_bytes, int want_length) {
         //有效字节数
         int valid_size = getValidSize();
-        if (0 == valid_size || 0 >= want_length) {
+        if (valid_size <= 0 || want_length <= 0) {
+            // 有效字节小于需要读字节，则返回，先不读
             return 0;
         }
-        // 判断可读取的字节数[有效字节数、希望读取字节数]中的小者
-        int can_read_size = Math.min(valid_size, want_length);
-        if (writeIndex > readIndex) {
-            // 写index 大于 读index，复制可复制字节
-            System.arraycopy(buffer, readIndex, put_bytes, 0, can_read_size);
-            readIndex += can_read_size;
+
+        if (valid_size < want_length) {
+            return 0;
         } else {
             int right_size = BUFFER_SIZE - readIndex;
-            // 复制右边字节
-            System.arraycopy(buffer, readIndex, put_bytes, 0, right_size);
-            // 复制左边可复制字节
-            System.arraycopy(buffer, 0, put_bytes, right_size, can_read_size - right_size);
-            readIndex = can_read_size - right_size;
+            if (right_size >= want_length) {
+                // 写index 大于 读index，复制可复制字节
+                System.arraycopy(buffer, readIndex, put_bytes, 0, want_length);
+                readIndex += want_length;
+            } else {
+                // 复制右边字节
+                System.arraycopy(buffer, readIndex, put_bytes, 0, right_size);
+                // 复制左边可复制字节
+                System.arraycopy(buffer, 0, put_bytes, right_size, want_length - right_size);
+                readIndex = want_length - right_size;
+            }
+            return want_length;
         }
-        return can_read_size;
     }
 
     /**
