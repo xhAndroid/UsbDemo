@@ -106,12 +106,15 @@ public class UsbHostManager {
      */
     private byte[] videoTwoBuffer = new byte[VIDEO_BUFFER_LENGTH];
 
-
     private boolean isUsbConnect = false;
     /**
      * USB 获取数据超时时间
      */
     private final static int POINT_TIMEOUT = 1000;
+
+    public boolean isConnect() {
+        return isUsbConnect;
+    }
 
     public void init(Context context) {
         UsbManager usbManager = (UsbManager) context.getSystemService(Context.USB_SERVICE);

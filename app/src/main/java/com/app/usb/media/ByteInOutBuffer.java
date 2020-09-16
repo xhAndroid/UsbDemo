@@ -18,7 +18,7 @@ public class ByteInOutBuffer {
     /**
      * 队列大小 5 M
      */
-    private static final int BUFFER_SIZE = 100 * 1024;
+    private static final int BUFFER_SIZE = 1000 * 1000;
     /**
      * 缓存 byte[]
      */
@@ -34,9 +34,10 @@ public class ByteInOutBuffer {
 
     /**
      * 有效字节数
+     *
      * @return
      */
-    private int getValidSize() {
+    public int getValidSize() {
         int size = (writeIndex - readIndex);
         if (size < 0) {
             return BUFFER_SIZE + size;
@@ -44,9 +45,18 @@ public class ByteInOutBuffer {
         return size;
     }
 
+    public boolean isCanRead() {
+        return getValidSize() > 0;
+    }
+
+    public byte getByteByIndex(int i) {
+        return buffer[(readIndex + i) % BUFFER_SIZE];
+    }
+
     /**
      * 读数据
-     * @param put_bytes 存放读取的字节
+     *
+     * @param put_bytes   存放读取的字节
      * @param want_length 希望读取的字节长度
      * @return
      */
@@ -75,8 +85,9 @@ public class ByteInOutBuffer {
 
     /**
      * 写数据
+     *
      * @param data_bytes 承载数据数组
-     * @param length 有效数据索引
+     * @param length     有效数据索引
      */
     public void write(byte[] data_bytes, int length) {
         if (null == data_bytes || length > data_bytes.length || 0 >= length) {
@@ -87,14 +98,14 @@ public class ByteInOutBuffer {
         if (can_write_right_size >= length) {
             System.arraycopy(data_bytes, 0, buffer, writeIndex, length);
             writeIndex += length;
-            Log.w(TAG, "length = " + length +", can_write_right_size = " + can_write_right_size +", writeIndex = " + writeIndex);
+//            Log.w(TAG, "length = " + length + ", can_write_right_size = " + can_write_right_size + ", writeIndex = " + writeIndex);
         } else {
             // 复制到右边
             System.arraycopy(data_bytes, 0, buffer, writeIndex, can_write_right_size);
             // 重新复制到左边
             System.arraycopy(data_bytes, can_write_right_size, buffer, 0, length - can_write_right_size);
             writeIndex = length - can_write_right_size;
-            Log.i(TAG, "length = " + length +", can_write_right_size = " + can_write_right_size +", writeIndex = " + writeIndex);
+//            Log.i(TAG, "length = " + length + ", can_write_right_size = " + can_write_right_size + ", writeIndex = " + writeIndex);
         }
     }
 
