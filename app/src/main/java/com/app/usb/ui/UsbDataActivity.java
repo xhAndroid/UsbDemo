@@ -40,12 +40,12 @@ public class UsbDataActivity extends AppCompatActivity implements IUsbHostRespon
         surfaceView.getHolder().addCallback(new SurfaceHolder.Callback() {
             @Override
             public void surfaceCreated(SurfaceHolder holder) {
-                mediaCodecHelper = new MediaCodecHelper(holder.getSurface());
+
             }
 
             @Override
             public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-
+                mediaCodecHelper = new MediaCodecHelper(holder.getSurface(), width, height);
             }
 
             @Override
